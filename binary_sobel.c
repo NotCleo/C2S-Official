@@ -1,239 +1,328 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <math.h>
 #include <float.h>
 #include <jpeglib.h>
-#include <sys/stat.h>  
-#include <sys/types.h> 
+#include <sys/stat.h>
+#include <sys/types.h>
 
+// --- Configuration ---
 #define KERNEL_SIZE 3
-#define MORPH_RADIUS 1 
+#define RAIL_WIDTH_ESTIMATE 50
+#define OUTPUT_DIR "/home/amrut/Downloads/test_output"
 
-int blur_kernel[KERNEL_SIZE][KERNEL_SIZE] = {
-    {0, 1, 0},
+// --- Kernels ---
+int blur_kernel[3][3] = {
     {1, 2, 1},
-    {0, 1, 0}
-};
+    {2, 4, 2},
+    {1, 2, 1}
+}; // Divisor: 16
 
-int sobel_vert_kernel[KERNEL_SIZE][KERNEL_SIZE] = {
+int sobel_h_kernel[3][3] = {
     {-1, 0, 1},
     {-2, 0, 2},
     {-1, 0, 1}
 };
 
-int sobel_horiz_kernel[KERNEL_SIZE][KERNEL_SIZE] = {
+int sobel_v_kernel[3][3] = {
     {-1, -2, -1},
-    {0, 0, 0},
-    {1, 2, 1}
+    {0,  0,  0},
+    {1,  2,  1}
 };
 
-unsigned char** read_jpeg_grayscale(const char* filename, int* width, int* height) {
+int emboss_kernel[3][3] = {
+    {-2, -1, 0},
+    {-1,  1, 1},
+    { 0,  1, 2}
+};
+
+// --- Image Structure ---
+typedef struct {
+    int width;
+    int height;
+    unsigned char **data;
+} Image;
+
+// --- Memory Management ---
+Image* create_image(int width, int height) {
+    Image *img = (Image*)malloc(sizeof(Image));
+    img->width = width;
+    img->height = height;
+    img->data = (unsigned char**)malloc(height * sizeof(unsigned char*));
+    for(int i=0; i<height; i++) {
+        img->data[i] = (unsigned char*)calloc(width, sizeof(unsigned char));
+    }
+    return img;
+}
+
+void free_image(Image *img) {
+    if (!img) return;
+    for(int i=0; i<img->height; i++) {
+        free(img->data[i]);
+    }
+    free(img->data);
+    free(img);
+}
+
+Image* clone_image(Image *src) {
+    Image *dst = create_image(src->width, src->height);
+    for(int y=0; y<src->height; y++) {
+        memcpy(dst->data[y], src->data[y], src->width * sizeof(unsigned char));
+    }
+    return dst;
+}
+
+// --- JPEG I/O ---
+Image* read_jpeg(const char* filename) {
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
     FILE* infile = fopen(filename, "rb");
-    if (!infile) { perror("Cannot open input file"); exit(1); }
+    if (!infile) {
+        fprintf(stderr, "Error opening %s\n", filename);
+        return NULL;
+    }
 
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_decompress(&cinfo);
     jpeg_stdio_src(&cinfo, infile);
     jpeg_read_header(&cinfo, 1);
-
     jpeg_start_decompress(&cinfo);
 
-    *width = cinfo.output_width;
-    *height = cinfo.output_height;
-    int channels = cinfo.output_components;
+    int w = cinfo.output_width;
+    int h = cinfo.output_height;
+    int ch = cinfo.output_components;
 
-    unsigned char* buffer = (unsigned char*) malloc(*width * channels);
-    unsigned char** gray = (unsigned char**) malloc(*height * sizeof(unsigned char*));
-    for (int i = 0; i < *height; i++)
-        gray[i] = (unsigned char*) malloc(*width * sizeof(unsigned char));
+    Image *img = create_image(w, h);
+    unsigned char* row_buffer = (unsigned char*)malloc(w * ch);
 
-    while (cinfo.output_scanline < cinfo.output_height) {
-        unsigned char* rowptr = buffer;
-        jpeg_read_scanlines(&cinfo, &rowptr, 1);
-
-        int y = cinfo.output_scanline - 1;
-        for (int x = 0; x < *width; x++) {
-            unsigned char R = rowptr[x * channels + 0];
-            unsigned char G = rowptr[x * channels + 1];
-            unsigned char B = rowptr[x * channels + 2];
-            gray[y][x] = (unsigned char)(0.299 * R + 0.587 * G + 0.114 * B); 
+    while (cinfo.output_scanline < h) {
+        int y = cinfo.output_scanline;
+        jpeg_read_scanlines(&cinfo, &row_buffer, 1);
+        for (int x = 0; x < w; x++) {
+            // Convert to Grayscale immediately
+            unsigned char R = row_buffer[x * ch];
+            unsigned char G = row_buffer[x * ch + 1];
+            unsigned char B = row_buffer[x * ch + 2];
+            img->data[y][x] = (unsigned char)(0.299 * R + 0.587 * G + 0.114 * B);
         }
     }
 
+    free(row_buffer);
     jpeg_finish_decompress(&cinfo);
     jpeg_destroy_decompress(&cinfo);
     fclose(infile);
-    free(buffer);
-    return gray;
+    return img;
 }
 
-void write_jpeg(const char* filename, unsigned char** img, int width, int height, int quality) {
+void write_jpeg(const char* filename, Image *img, int quality) {
     struct jpeg_compress_struct cinfo;
     struct jpeg_error_mgr jerr;
     FILE* outfile = fopen(filename, "wb");
-    if (!outfile) { perror("Cannot open output file"); exit(1); }
+    if (!outfile) {
+        fprintf(stderr, "Error creating %s\n", filename);
+        return;
+    }
 
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_compress(&cinfo);
     jpeg_stdio_dest(&cinfo, outfile);
 
-    cinfo.image_width = width;
-    cinfo.image_height = height;
-    cinfo.input_components = 1;  
+    cinfo.image_width = img->width;
+    cinfo.image_height = img->height;
+    cinfo.input_components = 1;
     cinfo.in_color_space = JCS_GRAYSCALE;
 
     jpeg_set_defaults(&cinfo);
-    jpeg_set_quality(&cinfo, quality, TRUE);  
-
+    jpeg_set_quality(&cinfo, quality, TRUE);
     jpeg_start_compress(&cinfo, TRUE);
 
     JSAMPROW row_pointer[1];
     while (cinfo.next_scanline < cinfo.image_height) {
-        row_pointer[0] = img[cinfo.next_scanline];
+        row_pointer[0] = img->data[cinfo.next_scanline];
         jpeg_write_scanlines(&cinfo, row_pointer, 1);
     }
 
     jpeg_finish_compress(&cinfo);
     jpeg_destroy_compress(&cinfo);
     fclose(outfile);
+    printf("Saved: %s\n", filename);
 }
 
-unsigned char** apply_kernel(unsigned char** img, int width, int height, int k[KERNEL_SIZE][KERNEL_SIZE], int divisor, int take_abs) {
-    unsigned char** out = (unsigned char**) malloc(height * sizeof(unsigned char*));
-    for (int i = 0; i < height; i++)
-        out[i] = (unsigned char*) calloc(width, sizeof(unsigned char));
+// --- Filters ---
+Image* apply_convolution(Image *src, int kernel[3][3], int divisor, int offset) {
+    Image *dst = create_image(src->width, src->height);
+    int h = src->height;
+    int w = src->width;
 
-    for (int y = 1; y < height - 1; y++) {
-        for (int x = 1; x < width - 1; x++) {
+    for (int y = 1; y < h - 1; y++) {
+        for (int x = 1; x < w - 1; x++) {
             int sum = 0;
             for (int ky = -1; ky <= 1; ky++) {
                 for (int kx = -1; kx <= 1; kx++) {
-                    sum += k[ky + 1][kx + 1] * img[y + ky][x + kx];
+                    sum += kernel[ky+1][kx+1] * src->data[y+ky][x+kx];
                 }
             }
-            if (take_abs) sum = abs(sum);
-            sum /= divisor;
+            if (divisor != 0) sum /= divisor;
+            sum += offset; // Useful for Emboss (adds 128 bias usually, or keeps 0)
+            
+            // Clamping
             if (sum < 0) sum = 0;
             if (sum > 255) sum = 255;
-            out[y][x] = (unsigned char) sum;
+            dst->data[y][x] = (unsigned char)sum;
         }
     }
-    return out;
+    return dst;
 }
 
-unsigned char** apply_sobel(unsigned char** img, int width, int height) {
-    unsigned char** gx = apply_kernel(img, width, height, sobel_horiz_kernel, 1, 1);
-    unsigned char** gy = apply_kernel(img, width, height, sobel_vert_kernel, 1, 1); 
+Image* filter_sobel(Image *src) {
+    // Standard Sobel Magnitude
+    Image *gx = apply_convolution(src, sobel_h_kernel, 1, 0);
+    Image *gy = apply_convolution(src, sobel_v_kernel, 1, 0);
+    Image *mag = create_image(src->width, src->height);
 
-    unsigned char** magnitude = (unsigned char**) malloc(height * sizeof(unsigned char*));
-    for (int i = 0; i < height; i++)
-        magnitude[i] = (unsigned char*) calloc(width, sizeof(unsigned char));
-
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            int mag = (int)sqrt((double)(gx[y][x] * gx[y][x] + gy[y][x] * gy[y][x]));
-            if (mag > 255) mag = 255;
-            magnitude[y][x] = (unsigned char)mag;
+    for (int y = 0; y < src->height; y++) {
+        for (int x = 0; x < src->width; x++) {
+            double val = sqrt(pow(gx->data[y][x], 2) + pow(gy->data[y][x], 2));
+            if (val > 255) val = 255;
+            mag->data[y][x] = (unsigned char)val;
         }
     }
-
-    for (int i = 0; i < height; i++) {
-        free(gx[i]);
-        free(gy[i]);
-    }
-    free(gx);
-    free(gy);
-
-    return magnitude;
+    free_image(gx);
+    free_image(gy);
+    return mag;
 }
 
+Image* filter_emboss(Image *src) {
+    // Emboss usually adds an offset of 128 to simulate depth on gray background
+    // If you want pure edges, offset 0. I will use offset 128 for "3D effect".
+    // If result looks too gray, change offset to 0.
+    return apply_convolution(src, emboss_kernel, 1, 128);
+}
+
+Image* filter_blur(Image *src) {
+    return apply_convolution(src, blur_kernel, 16, 0);
+}
+
+// --- Utils ---
+Image* crop_image(Image *src, int x_start, int crop_w) {
+    // Ensure bounds
+    if (x_start < 0) x_start = 0;
+    if (x_start + crop_w > src->width) x_start = src->width - crop_w;
+
+    Image *dst = create_image(crop_w, src->height);
+    for(int y=0; y<src->height; y++) {
+        for(int x=0; x<crop_w; x++) {
+            dst->data[y][x] = src->data[y][x_start + x];
+        }
+    }
+    return dst;
+}
+
+// Simple logic: Find region with lowest variance (smoothest vertical path)
+// or highest vertical consistency. 
+int detect_rail_start(Image *src, int rail_w) {
+    float min_avg_var = FLT_MAX;
+    int best_x = 0;
+
+    // Pre-calculate column variances
+    float *col_vars = (float*)calloc(src->width, sizeof(float));
+    for(int x=0; x<src->width; x++) {
+        float sum = 0, sq_sum = 0;
+        for(int y=0; y<src->height; y++) {
+            sum += src->data[y][x];
+            sq_sum += src->data[y][x] * src->data[y][x];
+        }
+        float mean = sum / src->height;
+        col_vars[x] = (sq_sum / src->height) - (mean * mean);
+    }
+
+    // Sliding window to find the rail
+    for (int x = 0; x <= src->width - rail_w; x++) {
+        float window_var_sum = 0;
+        for(int k=0; k<rail_w; k++) {
+            window_var_sum += col_vars[x+k];
+        }
+        if (window_var_sum < min_avg_var) {
+            min_avg_var = window_var_sum;
+            best_x = x;
+        }
+    }
+    free(col_vars);
+    return best_x;
+}
+
+// --- Main ---
 int main() {
-    const char* input_files[] = {
-        "/home/amrut/Downloads/lefttracktopview_drifted.jpg",
-        "/home/amrut/Downloads/righttracktopview_drifted.jpg"
-    };
-    const char* output_sobel_files[] = {
-        "/home/amrut/Downloads/test_output/lefttracktopview_sobel.jpg",
-        "/home/amrut/Downloads/test_output/righttracktopview_sobel.jpg"
-    };
-    const int num_images = 2;
-    const int rail_width_estimate = 50; 
-
+    // Create output directory
     struct stat st = {0};
-    if (stat("/home/amrut/Downloads/test_output", &st) == -1) {
-        mkdir("/home/amrut/Downloads/test_output", 0755);
+    if (stat(OUTPUT_DIR, &st) == -1) {
+        mkdir(OUTPUT_DIR, 0755);
     }
 
-    for (int img_idx = 0; img_idx < num_images; img_idx++) {
-        int width, height;
+    const char* input_files[] = {
+        "/home/amrut/Downloads/topviewtrack.jpeg"
+    };
+    int num_files = 1;
+    char out_path[512];
 
-        unsigned char** gray = read_jpeg_grayscale(input_files[img_idx], &width, &height);
-        printf("Image size: %dx%d\n", width, height);
+    for(int i=0; i<num_files; i++) {
+        printf("\nProcessing %s...\n", input_files[i]);
+        
+        // Extract base filename for naming
+        char *base_name = strrchr(input_files[i], '/');
+        base_name = (base_name) ? base_name + 1 : (char*)input_files[i];
+        // Remove extension roughly for naming
+        char name_only[100];
+        strncpy(name_only, base_name, 99);
+        char *dot = strrchr(name_only, '.');
+        if(dot) *dot = '\0';
 
-        float* variance = (float*) malloc(width * sizeof(float));
-        for (int x = 0; x < width; x++) {
-            float sum = 0.0f;
-            for (int y = 0; y < height; y++) sum += gray[y][x];
-            float mean = sum / height;
-            float var = 0.0f;
-            for (int y = 0; y < height; y++) var += powf(gray[y][x] - mean, 2);
-            variance[x] = var / height;
-        }
+        // 1. Load Original
+        Image *original = read_jpeg(input_files[i]);
+        if(!original) continue;
 
-        float min_avg_var = FLT_MAX;
-        int rail_start_x = 0;
-        for (int start = 0; start <= width - rail_width_estimate; start++) {
-            float avg_var = 0.0f;
-            for (int i = 0; i < rail_width_estimate; i++) avg_var += variance[start + i];
-            avg_var /= rail_width_estimate;
-            if (avg_var < min_avg_var) {
-                min_avg_var = avg_var;
-                rail_start_x = start;
-            }
-        }
-        printf("found the rail from x=%d to x=%d\n", rail_start_x, rail_start_x + rail_width_estimate - 1);
+        // SAVE 1: Original Grayscale
+        snprintf(out_path, sizeof(out_path), "%s/%s_01_original.jpg", OUTPUT_DIR, name_only);
+        write_jpeg(out_path, original, 95);
 
-        unsigned char** rail_gray = (unsigned char**) malloc(height * sizeof(unsigned char*));
-        for (int i = 0; i < height; i++)
-            rail_gray[i] = (unsigned char*) malloc(rail_width_estimate * sizeof(unsigned char));
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < rail_width_estimate; x++) {
-                rail_gray[y][x] = gray[y][rail_start_x + x];
-            }
-        }
+        // SAVE 2: Full Image Embossed
+        Image *full_emboss = filter_emboss(original);
+        snprintf(out_path, sizeof(out_path), "%s/%s_02_full_emboss.jpg", OUTPUT_DIR, name_only);
+        write_jpeg(out_path, full_emboss, 90);
+        free_image(full_emboss);
 
-        unsigned char** blurred = apply_kernel(rail_gray, rail_width_estimate, height, blur_kernel, 6, 0);
+        // --- Processing to find crop ---
+        int rail_x = detect_rail_start(original, RAIL_WIDTH_ESTIMATE);
+        printf("Detected rail at X: %d\n", rail_x);
 
-        unsigned char** sobel_mag = apply_sobel(blurred, rail_width_estimate, height);
+        // SAVE 3: Unfiltered Crop (Raw Pixels)
+        Image *crop_raw = crop_image(original, rail_x, RAIL_WIDTH_ESTIMATE);
+        snprintf(out_path, sizeof(out_path), "%s/%s_03_crop_raw.jpg", OUTPUT_DIR, name_only);
+        write_jpeg(out_path, crop_raw, 95);
 
-        unsigned char** final_sobel = (unsigned char**) malloc(height * sizeof(unsigned char*));
-        for (int i = 0; i < height; i++)
-            final_sobel[i] = (unsigned char*) calloc(width, sizeof(unsigned char));
-        for (int y = 0; y < height; y++) {
-            for (int x = rail_start_x; x < rail_start_x + rail_width_estimate; x++) {
-                int rx = x - rail_start_x;
-                final_sobel[y][x] = sobel_mag[y][rx]; 
-            }
-        }
+        // --- Filter the Crop ---
+        // Blur first to reduce noise for Sobel
+        Image *crop_blurred = filter_blur(crop_raw);
 
-        write_jpeg(output_sobel_files[img_idx], final_sobel, width, height, 90);
+        // SAVE 4: Crop Sobel (Discontinuity Detection)
+        Image *crop_sobel = filter_sobel(crop_blurred);
+        snprintf(out_path, sizeof(out_path), "%s/%s_04_crop_sobel.jpg", OUTPUT_DIR, name_only);
+        write_jpeg(out_path, crop_sobel, 90);
 
-        for (int i = 0; i < height; i++) {
-            free(gray[i]);
-            free(rail_gray[i]);
-            free(blurred[i]);
-            free(sobel_mag[i]);
-            free(final_sobel[i]);
-        }
-        free(gray);
-        free(rail_gray);
-        free(blurred);
-        free(sobel_mag);
-        free(final_sobel);
-        free(variance);
+        // SAVE 5: Crop Emboss (Texture/Depth Visualization)
+        Image *crop_emboss = filter_emboss(crop_raw);
+        snprintf(out_path, sizeof(out_path), "%s/%s_05_crop_emboss.jpg", OUTPUT_DIR, name_only);
+        write_jpeg(out_path, crop_emboss, 90);
 
-        printf("Done, output written to %s\n", output_sobel_files[img_idx]);
+        // Clean up per iteration
+        free_image(original);
+        free_image(crop_raw);
+        free_image(crop_blurred);
+        free_image(crop_sobel);
+        free_image(crop_emboss);
     }
+
+    printf("\nAll processing complete.\n");
+    return 0;
 }
