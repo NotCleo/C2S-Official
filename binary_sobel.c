@@ -7,17 +7,15 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-// --- Configuration ---
 #define KERNEL_SIZE 3
 #define RAIL_WIDTH_ESTIMATE 50
 #define OUTPUT_DIR "/home/amrut/Downloads/test_output"
 
-// --- Kernels ---
 int blur_kernel[3][3] = {
     {1, 2, 1},
     {2, 4, 2},
     {1, 2, 1}
-}; // Divisor: 16
+}; 
 
 int sobel_h_kernel[3][3] = {
     {-1, 0, 1},
@@ -37,14 +35,12 @@ int emboss_kernel[3][3] = {
     { 0,  1, 2}
 };
 
-// --- Image Structure ---
 typedef struct {
     int width;
     int height;
     unsigned char **data;
 } Image;
 
-// --- Memory Management ---
 Image* create_image(int width, int height) {
     Image *img = (Image*)malloc(sizeof(Image));
     img->width = width;
@@ -73,7 +69,6 @@ Image* clone_image(Image *src) {
     return dst;
 }
 
-// --- JPEG I/O ---
 Image* read_jpeg(const char* filename) {
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
@@ -149,7 +144,6 @@ void write_jpeg(const char* filename, Image *img, int quality) {
     printf("Saved: %s\n", filename);
 }
 
-// --- Filters ---
 Image* apply_convolution(Image *src, int kernel[3][3], int divisor, int offset) {
     Image *dst = create_image(src->width, src->height);
     int h = src->height;
@@ -164,9 +158,8 @@ Image* apply_convolution(Image *src, int kernel[3][3], int divisor, int offset) 
                 }
             }
             if (divisor != 0) sum /= divisor;
-            sum += offset; // Useful for Emboss (adds 128 bias usually, or keeps 0)
+            sum += offset;
             
-            // Clamping
             if (sum < 0) sum = 0;
             if (sum > 255) sum = 255;
             dst->data[y][x] = (unsigned char)sum;
@@ -176,7 +169,6 @@ Image* apply_convolution(Image *src, int kernel[3][3], int divisor, int offset) 
 }
 
 Image* filter_sobel(Image *src) {
-    // Standard Sobel Magnitude
     Image *gx = apply_convolution(src, sobel_h_kernel, 1, 0);
     Image *gy = apply_convolution(src, sobel_v_kernel, 1, 0);
     Image *mag = create_image(src->width, src->height);
@@ -194,9 +186,6 @@ Image* filter_sobel(Image *src) {
 }
 
 Image* filter_emboss(Image *src) {
-    // Emboss usually adds an offset of 128 to simulate depth on gray background
-    // If you want pure edges, offset 0. I will use offset 128 for "3D effect".
-    // If result looks too gray, change offset to 0.
     return apply_convolution(src, emboss_kernel, 1, 128);
 }
 
@@ -204,9 +193,7 @@ Image* filter_blur(Image *src) {
     return apply_convolution(src, blur_kernel, 16, 0);
 }
 
-// --- Utils ---
 Image* crop_image(Image *src, int x_start, int crop_w) {
-    // Ensure bounds
     if (x_start < 0) x_start = 0;
     if (x_start + crop_w > src->width) x_start = src->width - crop_w;
 
@@ -219,8 +206,7 @@ Image* crop_image(Image *src, int x_start, int crop_w) {
     return dst;
 }
 
-// Simple logic: Find region with lowest variance (smoothest vertical path)
-// or highest vertical consistency. 
+
 int detect_rail_start(Image *src, int rail_w) {
     float min_avg_var = FLT_MAX;
     int best_x = 0;
@@ -237,7 +223,6 @@ int detect_rail_start(Image *src, int rail_w) {
         col_vars[x] = (sq_sum / src->height) - (mean * mean);
     }
 
-    // Sliding window to find the rail
     for (int x = 0; x <= src->width - rail_w; x++) {
         float window_var_sum = 0;
         for(int k=0; k<rail_w; k++) {
@@ -252,9 +237,7 @@ int detect_rail_start(Image *src, int rail_w) {
     return best_x;
 }
 
-// --- Main ---
 int main() {
-    // Create output directory
     struct stat st = {0};
     if (stat(OUTPUT_DIR, &st) == -1) {
         mkdir(OUTPUT_DIR, 0755);
@@ -269,60 +252,46 @@ int main() {
     for(int i=0; i<num_files; i++) {
         printf("\nProcessing %s...\n", input_files[i]);
         
-        // Extract base filename for naming
         char *base_name = strrchr(input_files[i], '/');
         base_name = (base_name) ? base_name + 1 : (char*)input_files[i];
-        // Remove extension roughly for naming
         char name_only[100];
         strncpy(name_only, base_name, 99);
         char *dot = strrchr(name_only, '.');
         if(dot) *dot = '\0';
 
-        // 1. Load Original
         Image *original = read_jpeg(input_files[i]);
         if(!original) continue;
 
-        // SAVE 1: Original Grayscale
         snprintf(out_path, sizeof(out_path), "%s/%s_01_original.jpg", OUTPUT_DIR, name_only);
         write_jpeg(out_path, original, 95);
 
-        // SAVE 2: Full Image Embossed
         Image *full_emboss = filter_emboss(original);
         snprintf(out_path, sizeof(out_path), "%s/%s_02_full_emboss.jpg", OUTPUT_DIR, name_only);
         write_jpeg(out_path, full_emboss, 90);
         free_image(full_emboss);
 
-        // --- Processing to find crop ---
         int rail_x = detect_rail_start(original, RAIL_WIDTH_ESTIMATE);
         printf("Detected rail at X: %d\n", rail_x);
 
-        // SAVE 3: Unfiltered Crop (Raw Pixels)
         Image *crop_raw = crop_image(original, rail_x, RAIL_WIDTH_ESTIMATE);
         snprintf(out_path, sizeof(out_path), "%s/%s_03_crop_raw.jpg", OUTPUT_DIR, name_only);
         write_jpeg(out_path, crop_raw, 95);
 
-        // --- Filter the Crop ---
-        // Blur first to reduce noise for Sobel
         Image *crop_blurred = filter_blur(crop_raw);
 
-        // SAVE 4: Crop Sobel (Discontinuity Detection)
         Image *crop_sobel = filter_sobel(crop_blurred);
         snprintf(out_path, sizeof(out_path), "%s/%s_04_crop_sobel.jpg", OUTPUT_DIR, name_only);
         write_jpeg(out_path, crop_sobel, 90);
 
-        // SAVE 5: Crop Emboss (Texture/Depth Visualization)
         Image *crop_emboss = filter_emboss(crop_raw);
         snprintf(out_path, sizeof(out_path), "%s/%s_05_crop_emboss.jpg", OUTPUT_DIR, name_only);
         write_jpeg(out_path, crop_emboss, 90);
 
-        // Clean up per iteration
         free_image(original);
         free_image(crop_raw);
         free_image(crop_blurred);
         free_image(crop_sobel);
         free_image(crop_emboss);
     }
-
-    printf("\nAll processing complete.\n");
     return 0;
 }
