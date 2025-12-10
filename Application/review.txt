@@ -1,0 +1,209 @@
+Here's the context,
+
+AIM : Predictive Maintenance of Railway Infrastructure using Drones that hosts a dedicated FPGA to perform image processing and a camera to capture tracks
+
+We have a drone flying over railway tracks, which takes images of the track and attached to the drone is a FPGA where Image processing takes place.
+
+What altitude does the drone fly at?
+It flies at around 2-5 ft from track, right above it
+
+What does the image appear like?
+It would an image that would contain the railway track, the fittings, the wooden sleeper planks, and gravel, and some vegation possibly, that may cover the track or not
+
+What camera are we using to take the image with?
+Here's the specification; 
+| **Item**                     | **Details**           |
+|-----------------------------|------------------------|
+| **Item Type**               | Camera Module          |
+| **Resolution**              | 5 MP                   |
+| **Optical Size**            | 1/4”                   |
+| **Speed**                   | 8 MHz                  |
+| **Pixel Size**              | 2592 × 1944            |
+| **Power Supply**            | 3.3 V – 5 V            |
+| **Interface**               | 4-wire SPI             |
+| **Shutter Type**            | Rolling Shutter        |
+| **Power Consumption**       | 182 – 650 mW           |
+| **Depth FOV**               | 68.75° (Diagonal)      |
+| **F-Number (F.NO)**         | F2.0                   |
+| **Lens Info**               | Stock Lens             |
+| **Focus Distance**          | 8 cm – ∞               |
+| **Operating Current**       | 55 – 154 mA            |
+| **Output Format**           | RGB / YUV / JPEG       |
+| **Board Size**              | 33 × 33 × 17 mm        |
+| **Shipping Weight**         | 0.027 kg               |
+| **Shipping Dimensions**     | 9 × 5 × 2 cm           |
+
+
+What's our operating conditions?
+So we will fly at 2-5ft altitude, perhaps 2ft, and will fly with very low payload, to ensure we get more flight time, regarding the wind conditions, we are prone to
+facing turbulance due to passing trains, we will use way point navigation by hardcoding the track path and ensuring it flies along the track by itself (the FCU handles)
+We will mostly fly at a low speed, to ensure images are taken well as it is not global shutter and our end goal is to compute filtering of these images on the fly. by
+applying different filters (canny/sobel/binary) to obtain a clean image showing track defects, each of these filtered images are then marked with the timestamp and gps 
+and a score (using some thresholding) to see if any defect has been detected or not, we are restraining ourselves from using any ML inference as the FPGA cannot handle it
+
+Here's the FPGA's specifications; 
+
+# Arty A7 Board Features
+
+## FPGA
+- **Xilinx Artix-7 FPGA**
+  - 5,200 slices containing four 6-input LUTs and 8 flip-flops *(35T)*  
+    15,850 slices *(100T)*
+  - 1,800 Kbits block RAM *(35T)*  
+    4,860 Kbits *(100T)*
+  - 5 Clock Management Tiles *(35T)*  
+    6 CMTs *(100T)*
+  - 90 DSP slices *(35T)*  
+    240 DSP slices *(100T)*
+  - Internal clock speeds > 450 MHz
+  - On-chip XADC
+  - Programmable over JTAG and Quad-SPI Flash
+
+## System Features
+- 256 MB DDR3L, 16-bit bus @ 333 MHz  
+- 16 MB Quad-SPI Flash  
+- USB-JTAG programming circuitry  
+- Powered from USB or 7–15V external supply  
+
+## Connectivity
+- 10/100 Mbps Ethernet  
+- USB-UART Bridge  
+
+## Interaction & Sensory Devices
+- 4 Switches  
+- 4 Buttons  
+- 1 Reset Button  
+- 4 LEDs  
+- 4 RGB LEDs  
+
+## Expansion
+- 4 Pmod connectors  
+- Arduino/ChipKit Shield connector  
+
+---
+
+# Product Variants
+
+| Feature | Arty A7-100 |
+|--------|--------------|
+| **FPGA Part Number** | XC7A100TCSG324-1 |
+| **Look-up Tables (LUTs)** | 15,850 |
+| **Flip-Flops**| 126,800 |
+| **Block RAM**| 607.5 KB |
+| **Clock Management Tiles**| 6 |
+
+
+Since we are restricted to no ML but pure image processing, our filtering binary (which will be a giant C-Code compiled down as riscv64-linux-gnu-gcc -static filters.c -o filters -lm)
+So, we will be restricting how the filtering works and fixing a thresholding ground truth, meaning we have to ensure the track appears always in the same spot in each image we take 
+
+Regarding "to see if any defect has been detected or not";
+The kinds of defect we are aiming to detect are;
+1) Discontinuity in the track 
+2) Missing fittings from the track, fittings involve bolts/tightening screws
+3) Misaligned wooden sleepers
+4) Obstacle or any foreign object on the track
+5) Reduced supporting gravel base level
+6) A combination of any of the above five types
+
+Sounds complicated to do on such a rudimentary FPGA with no sort of ML inference happening and just some image processing right? 
+So, we have decided to focus on achieving just the 1st category, which is identify if any discontinuities are present in the metal part of the track line
+
+Another question to answer is, "How do you plan to cover entire railway network, given that we have very limited flight times and implementing charging stations means 
+a lot of cost overhead and eventually manpower, which is exactly what we aim to reduce by having a drone fly on its own, take the images, process it and come back and perform
+this periodically 
+
+So, we are performing the following;
+
+## **Our Target Operating Conditions :**
+
+1. **Railway Crossings (Level Crossings)**
+
+- **Why**: Road vehicles, pedestrians, cycles, livestock → continuous impact and abrasion.
+- **Failure modes**:
+    - Rail head cracks from vehicle impact.
+    - Loose/damaged fasteners.
+    - Concrete/asphalt damage between rails.
+
+ 2. **Turnouts / Switches & Crossings (Points)**
+
+- **Why**: Trains switch tracks here, causing wheel–rail impact and lateral forces.
+- **Failure modes**:
+    - Rail head chipping and cracks.
+    - Wear of switch rails and frog (crossing nose).
+    - Misalignment and deformation.
+
+3. **Bridge Approaches & Expansion Joints**
+
+- **Why**: Transition zones between rigid bridge deck and flexible track bed → differential settlement.
+- **Failure modes**:
+    - Track misalignment.
+    - Crack initiation due to stress concentration.
+    - Corrosion if bridge deck drains poorly.
+
+4. **Tunnels / Underpasses**
+
+- **Why**: Humidity, water seepage, limited visibility.
+- **Failure modes**:
+    - Rust, head checks, and cracks.
+    - Fastener loosening due to damp conditions.
+
+5. **Station Entry/Exit Tracks (Braking Zones)**
+
+- **Why**: Frequent braking and acceleration.
+- **Failure modes**:
+    - Plastic deformation of rail-head.
+    - Squats and cracks.
+
+ 6. **Curves with Small Radius**
+
+- **Why**: Higher lateral forces on rails.
+- **Failure modes**:
+    - Gauge corner cracking.
+    - Uneven wear on inner/outer rails.
+
+7. **Flood-prone or Drainage-poor Sections**
+
+- **Why**: Water logging accelerates ballast degradation and corrosion.
+- **Failure modes**:
+    - Rail corrosion cracks.
+    - Track settlement → misalignment.
+
+
+
+Regarding the track width itself, we are targetting Indian Railways general tracks which are broad gauge of 1676mm If I'm not wrong
+
+
+So, how do we come to "Predictive Maintenance"?
+
+Our goal is to apply filters, so our image would as follows;
+
+1) image is 320x240 (pretty bad camera i know!)
+2) image will be a top view shot of the railway track
+3) image will only contain one track's shot, which means only one pair of tracklines
+4) due to the turbulance, we cannot gurantee that the parallel tracklines appears in the middle of each image and can be skewed horizontally left or right
+5) due to the turbulance, we cannot gurantee that the parallel tracklines appears always at 90 degrees top to bottom and can have an angle offset of 5-10 degrees from top to bottom
+
+
+What do we wish to do?
+1) we take an image
+2) we apply the filters and combination of filters
+3) we geotag and timetag the images
+4) we apply thresholding based on the result of filter(s)
+5) we append a score along with the image's metadata which already is being appended with gps+timestamp
+6) we save the original and filtered images in the SD card (via the SPI protocol)
+7) we will offload those images and run offsite inference by stitching these images based on gps+timestamp and forming one giant grid of images to run ML models on
+
+
+What filters and thresholding plan do we have?
+1) we thought about first identifying where the track is in the image, by finding one pair of strongly parallel edges,since we cannot gurantee's drone flight path to be really precise
+we will have to robustly apply some filters that will find these parallel edges, if its perpendicular; meaning runs top to bottom with no angle skew, we will crop the images to only the trackline region
+if there is an angle skew, we find the parallel edges, find the skew, correct the angle skew and then crop into only the track region(parallel region)
+
+2) we will apply filters to these crops, i have a bunch in mind such as 
+
+Sobel, Canny, Otsu, Emboss, and some image segmentation techniques and some filters that can help find continuity or cracks or obstacles on strongly vertical edges or parallel edges (why did i say vertical? because from step 2 we have now only image crops of track lines which are vertical)
+
+3) then we apply some thresholding, by checking if any discontinuity was found, if yes, we give it a score, and append to image's meta data
+
+
+
