@@ -207,3 +207,23 @@ Sobel, Canny, Otsu, Emboss, and some image segmentation techniques and some filt
 
 
 
+Now regarding the drone itself, 
+1) We are now thinking of using vegaat1051 as a flight computer and a dedicated flight controller would be used which is a pixahawk 
+2) We require around 20-40 minutes of flight time assuming light wind conditiosn
+3) our drone would only carry 1-2 of the above spi arducams as mentioned | **Shipping Weight**         | 0.027 kg               | *2 meaning roughly 40-100 grams of camera as payload
+
+What I want to know now is, what parts do i pick for the drone to achieve such a flight time?
+We have prepared two documents regarding the drone parts
+
+Broadly I want a list;
+1) What ESC (speed controllers to use)?
+2) What kv rating motors to use?
+3) What size should the drone frame and material (and accordingly its weight) be?
+4) What battery capacity to use? what voltages, ratings,....?
+
+If we assumed our payload to go upto 500 grams, accordingly what should the part specifications be like?
+
+We want a drone that flies stable and slow, we do not need super fast drones, we want it to cover a decent amount of track, regarding it's calculation, we will get to it in a while below.
+
+Just to give a rough approximation,
+
