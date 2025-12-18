@@ -1,0 +1,8 @@
+1) Battery :
+
+(i) https://robu.in/product/bonka-11-1v-8000mah-25c-3s-lithium-polymer-battery-pack/?gad_source=1&gad_campaignid=17427802559&gclid=Cj0KCQiA6Y7KBhCkARIsAOxhqtMuvHqWaeTIWj44vTR0NSSpyhHMKLE1fBA_yTrnlEpDvHvrFca5vkYaAvVSEALw_wcB
+
+2) 12 V voltage regulator for Artix-7 :
+(i) https://robu.in/product/mini560-dc-dc-12v-5a-step-down-stabilized-voltage-source-modulenotesmd-resistance-marked-28c-represents-12v/?gad_source=1&gad_campaignid=17427802703&gclid=Cj0KCQiA6Y7KBhCkARIsAOxhqtNIyI62dL1usARnT96B_ycYjSKDPFArYjJTWOcqQH-k5JYDmnlLxeoaAkuoEALw_wcB
+
+3) 
