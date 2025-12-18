@@ -5,4 +5,27 @@
 2) 12 V voltage regulator for Artix-7 :
 (i) https://robu.in/product/mini560-dc-dc-12v-5a-step-down-stabilized-voltage-source-modulenotesmd-resistance-marked-28c-represents-12v/?gad_source=1&gad_campaignid=17427802703&gclid=Cj0KCQiA6Y7KBhCkARIsAOxhqtNIyI62dL1usARnT96B_ycYjSKDPFArYjJTWOcqQH-k5JYDmnlLxeoaAkuoEALw_wcB
 
-3) 
+
+
+Frame: 450mm - 500mm 
+
+Motors: 700KV - 800KV 
+If we fixed 750 KV motors - https://robu.in/product/dys-d2836-750kv-outrunner-brushless-drone-motor/?gad_source=1&gad_campaignid=17419548928&gclid=Cj0KCQiA6Y7KBhCkARIsAOxhqtM9C2vpsSEyL2_PxHFcatL9Ebz1ciGzkZLJjmBje4n_rTovKy6DfJMaAiJqEALw_wcB
+
+Propellers: 11 x 4.7 or 12 x 4.5 inch 
+If we fixed the first option - Pro-Range Propellers 1145(11X4.5) Glass Fiber Nylon Gray 1CW+1CCW-1pair
+
+
+Battery: 6S 8,000mAh - 10,000mAh 
+If we got this - https://robocraze.com/products/bonka-5200mah-35c-6s1p-22-2v-lipo-battery?variant=40351911116953&country=IN&currency=INR&utm_medium=product_sync&utm_source=google&utm_content=sag_organic&utm_campaign=sag_organic&campaignid=22271813913&adgroupid=&keyword=&device=c&gad_source=1&gad_campaignid=22271815110&gclid=Cj0KCQiA6Y7KBhCkARIsAOxhqtOs86tcK9DTNmpe_2ZVsKfuU6A2eYrM5uYZDotLLzh_ym95OBtEKCEaAtYPEALw_wcB
+
+ESC: 30A - 35A (4S Rated) or ESC: 40A (6S Rated) 
+
+
+
+Regulator12V 3A - 5A UBEC
+
+
+
+
+
