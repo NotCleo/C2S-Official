@@ -1,0 +1,12 @@
+1) Installed 2023.2 ML edition Vivado 
+2) Sudo ran the binary
+3) Complete Wizard-based installation
+4) gave it path in /opt/
+
+NO license involved so far
+
+Also swap space needed to be increased
+
+1) swapon --show
+2) free -h
+3) my swap is now around 18GB (1.2x my total RAM)
