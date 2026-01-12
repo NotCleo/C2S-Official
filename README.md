@@ -7,5 +7,10 @@ To access PuTty on Ubuntu do - GDK_BACKEND=x11 putty at 115200 after verifying a
 
 for me :
 
-    in AMD Xilinx i'm using my clg mail
+    in AMD Xilinx i'm NOT using my clg mail
     
+
+
+riscv32-linux-gnu-gcc -static -march=rv32ima -mabi=ilp32 arducam_capture.c -o arducam_capture
+
+
