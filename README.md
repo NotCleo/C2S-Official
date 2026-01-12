@@ -11,6 +11,20 @@ for me :
     
 
 
-riscv32-linux-gnu-gcc -static -march=rv32ima -mabi=ilp32 arducam_capture.c -o arducam_capture
+download riscv32 toolchain first!!
+
+    sudo apt update
+    sudo apt install gcc-riscv32-linux-gnu
+
+
+    riscv32-linux-gnu-gcc -static -march=rv32ima -mabi=ilp32 arducam_capture.c -o arducam_capture
+    
+    Target: riscv32-linux-gnu
+    C library: glibc
+    ABI: ilp32
+    ARCH: rv32ima
+
+
+
 
 
