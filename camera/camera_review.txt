@@ -1,0 +1,8 @@
+The following contents have to reviewed (documented) :
+
+1) The camera specifications 
+2) The camera peripheral porting
+3) The camera protocol interfacing with the SoC
+4) The image specifications v/s requirements
+5) The capture driver code review
+6) The raw image binary (yuv->rgb) conversion driver review
