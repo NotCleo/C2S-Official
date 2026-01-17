@@ -47,10 +47,9 @@ void *map_physical_memory(uint32_t phys_addr) {
 }
 
 // ==========================================
-// 4. LOW-LEVEL DRIVERS (FORCE/BLIND MODE)
+// 4. LOW-LEVEL DRIVERS (BLIND MODE)
 // ==========================================
 
-// --- SPI ---
 void spi_init() {
     SPI_REG(0x40) = 0x0A;       
     usleep(1000);
@@ -172,7 +171,7 @@ void sensor_write_array(const uint8_t data[][2]) {
 }
 
 // ==========================================
-// 6. MAIN
+// 6. MAIN EXECUTION
 // ==========================================
 int main() {
     printf("[INIT] Mapping Physical Memory...\n");
@@ -189,61 +188,57 @@ int main() {
     if(test != 0x55) { printf("FAIL (0x%02X)\n", test); return -1; }
     printf("PASS\n");
 
-    // 2. Configure Sensor (Blind Mode - No waiting for status)
-    printf("[STEP 2] Configuring OV2640 (Blind Mode)... ");
-    fflush(stdout);
-
+    // 2. Configure Sensor
+    printf("[STEP 2] Configuring OV2640... ");
     i2c_write_reg(0xFF, 0x01); 
     i2c_write_reg(0x12, 0x80); 
-    usleep(200000); // 200ms wait for Reset
-
+    usleep(200000); 
     sensor_write_array(OV2640_JPEG_INIT);
     sensor_write_array(OV2640_320x240_JPEG);
-    printf("DONE\n");
+    printf("DONE.\n");
 
-    // 3. Trigger
-    printf("[STEP 3] Capturing... ");
-    fflush(stdout);
-    arducam_write_reg(ARDUCHIP_FIFO, 0x01);
-    arducam_write_reg(ARDUCHIP_FIFO, 0x02);
-    
+    // 3. Trigger Capture
+    printf("[STEP 3] Triggering Capture...\n");
+    arducam_write_reg(ARDUCHIP_FIFO, 0x01); 
+    arducam_write_reg(ARDUCHIP_FIFO, 0x02); 
+
     int attempts = 0;
     while (!(arducam_read_reg(ARDUCHIP_TRIG) & CAP_DONE_MASK)) {
         usleep(100000);
-        if(++attempts > 500) { printf("TIMEOUT\n"); return -1; }
+        printf("."); fflush(stdout);
+        if(++attempts > 500) { printf("\n[ERROR] Timeout!\n"); return -1; }
     }
-    printf("DONE\n");
+    printf("\n[SUCCESS] Capture Complete.\n");
 
-    // 4. Get Size
+    // 4. Read Size
     uint32_t len1 = arducam_read_reg(ARDUCHIP_FIFO_SIZE1);
     uint32_t len2 = arducam_read_reg(ARDUCHIP_FIFO_SIZE2);
     uint32_t len3 = arducam_read_reg(ARDUCHIP_FIFO_SIZE3) & 0x7F;
     uint32_t length = ((len3 << 16) | (len2 << 8) | len1) & 0x07FFFFF;
+
     printf("[STEP 4] Image Size: %d bytes\n", (int)length);
+    if (length == 0 || length > 400000) { printf("[ERROR] Invalid Size.\n"); return -1; }
 
-    if (length == 0 || length > 400000) { printf("Error: Invalid Size\n"); return -1; }
-
-    // 5. Download JPG
-    printf("[STEP 5] Saving to 'image.jpg'...");
-    fflush(stdout);
-    
-    FILE *fp = fopen("image.jpg", "wb");
-    if (!fp) return -1;
+    // 5. Save to BIN File
+    printf("[STEP 5] Saving to 'image.bin'...\n");
+    FILE *fp = fopen("image.bin", "wb");
+    if (!fp) { perror("File open failed"); return -1; }
 
     SPI_REG(0x70) = 0xFFFFFFFE; // CS Assert
     spi_transfer(BURST_FIFO_READ);
     
-    // CRITICAL DUMMY BYTE READ
+    // DUMMY BYTE
     spi_transfer(0x00); 
 
     for (uint32_t i = 0; i < length; i++) {
-        fputc(spi_transfer(0x00), fp);
-        if(i % 4096 == 0) { printf("."); fflush(stdout); }
+        uint8_t byte = spi_transfer(0x00);
+        fputc(byte, fp);
+        if (i % 4096 == 0) { printf("."); fflush(stdout); }
     }
     
     SPI_REG(0x70) = 0xFFFFFFFF; // CS Deassert
     fclose(fp);
 
-    printf(" DONE\n");
+    printf("\n[DONE] Saved to image.bin\n");
     return 0;
 }
