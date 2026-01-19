@@ -9,7 +9,6 @@
 #define YUV_SIZE (W * H * 2)
 #define GRAY_SIZE (W * H)
 
-// --- MEMORY HELPERS ---
 uint8_t* alloc_gray() { return calloc(GRAY_SIZE, 1); }
 
 void save_bin(const char *filename, uint8_t *data) {
@@ -21,10 +20,8 @@ void save_bin(const char *filename, uint8_t *data) {
     }
 }
 
-// --- BASIC MATH HELPERS ---
 int clamp(int v) { return (v < 0) ? 0 : (v > 255) ? 255 : v; }
 
-// --- CORE: CONVOLUTION (3x3) ---
 void convolve(uint8_t *in, uint8_t *out, int k[3][3], int div, int offset) {
     for (int y = 1; y < H-1; y++) {
         for (int x = 1; x < W-1; x++) {
@@ -41,7 +38,6 @@ void convolve(uint8_t *in, uint8_t *out, int k[3][3], int div, int offset) {
     }
 }
 
-// --- 1. EDGE DETECTION SUITE ---
 
 void filter_sobel_mag(uint8_t *in, uint8_t *out) {
     int gx[3][3] = {{-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1}};
@@ -63,10 +59,8 @@ void filter_sobel_mag(uint8_t *in, uint8_t *out) {
 }
 
 void filter_prewitt(uint8_t *in, uint8_t *out) {
-    // Prewitt is simpler than Sobel (no weight of 2)
     int gx[3][3] = {{-1, 0, 1}, {-1, 0, 1}, {-1, 0, 1}};
     int gy[3][3] = {{-1, -1, -1}, {0, 0, 0}, {1, 1, 1}};
-    // Reusing the loop structure would be cleaner, but expanding for clarity
     for (int y = 1; y < H-1; y++) {
         for (int x = 1; x < W-1; x++) {
             int sumX = 0, sumY = 0;
@@ -77,17 +71,16 @@ void filter_prewitt(uint8_t *in, uint8_t *out) {
                     sumY += val * gy[j+1][i+1];
                 }
             }
-            out[y*W + x] = clamp(abs(sumX) + abs(sumY)); // Approx magnitude
+            out[y*W + x] = clamp(abs(sumX) + abs(sumY)); 
         }
     }
 }
 
 void filter_laplacian(uint8_t *in, uint8_t *out) {
     int k[3][3] = {{0, 1, 0}, {1, -4, 1}, {0, 1, 0}};
-    convolve(in, out, k, 1, 0); // Result is often dark, edges are bright
+    convolve(in, out, k, 1, 0); 
 }
 
-// --- 2. SMOOTHING FILTERS ---
 
 void filter_box_blur(uint8_t *in, uint8_t *out) {
     int k[3][3] = {{1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
@@ -99,7 +92,6 @@ void filter_gaussian_blur(uint8_t *in, uint8_t *out) {
     convolve(in, out, k, 16, 0);
 }
 
-// Bubble sort for Median Filter
 void sort_array(uint8_t *arr, int n) {
     for (int i = 0; i < n-1; i++) {
         for (int j = 0; j < n-i-1; j++) {
@@ -128,8 +120,6 @@ void filter_median(uint8_t *in, uint8_t *out) {
     }
 }
 
-// --- 3. MORPHOLOGICAL FILTERS ---
-// 0 = Erosion (Min), 1 = Dilation (Max)
 void filter_morph(uint8_t *in, uint8_t *out, int mode) {
     for (int y = 1; y < H-1; y++) {
         for (int x = 1; x < W-1; x++) {
@@ -211,8 +201,7 @@ int main() {
     filter_median(gray, temp);        save_bin("filter_median.bin", temp);
 
     printf("--- Sharpening ---\n");
-    // Sharpen = Original + (Original - Blurred)
-    // Simple kernel version:
+
     int k_sharp[3][3] = {{0,-1,0}, {-1,5,-1}, {0,-1,0}};
     convolve(gray, temp, k_sharp, 1, 0); save_bin("filter_sharpen.bin", temp);
     
@@ -223,10 +212,8 @@ int main() {
     filter_morph(gray, temp, 0); save_bin("filter_erosion.bin", temp); // Erode
     filter_morph(gray, temp2, 1); save_bin("filter_dilation.bin", temp2); // Dilate
     
-    // Opening (Erosion -> Dilation) [Removes small noise]
     filter_morph(temp, temp2, 1); save_bin("filter_opening.bin", temp2);
     
-    // Closing (Dilation -> Erosion) [Fills small holes] - Requires fresh dilate
     filter_morph(gray, temp, 1); // Dilate original
     filter_morph(temp, temp2, 0); // Erode result
     save_bin("filter_closing.bin", temp2);
