@@ -1,0 +1,26 @@
+1) I have a MPU6050 to be interfaced with the Arty-7 100T FPGA
+2) I believe here are the variations of tests that can be performed with that sensor
+      MPU6050_accel_pitch_roll
+      MPU6050_accel_simple
+      MPU6050_free_fall
+      MPU6050_gyro_pitch_roll_yaw
+      MPU6050_gyro_simple
+      MPU6050_motion
+      MPU6050_temperature
+3) In the above list, I require to test MPU6050_accel_pitch_roll and MPU6050_gyro_pitch_roll_yaw (the acceleratometer and gyrometer ICs)
+4) I believe both the above tests can be done with a 4 pin interface with i2c, the four pins being
+      vcc = 3.3v
+      ground = gnd
+      sda = i2c data line
+      scl = i2c clock line
+5) I have attached the mpu6050 register address mapping pdf 
+6) I will require a C code to run the following compile commands (assuming that i am doing accel_pitch_roll.c <---> essentially this test -> MPU6050_accel_pitch_roll)
+
+/home/amrut/VEGA/trisul32_buildroot/buildroot/output/host/bin/riscv32-linux-gcc /home/amrut/Downloads/accel_pitch_roll.c -o accel_pitch_roll -static
+/home/amrut/VEGA/trisul32_buildroot/buildroot/output/host/bin/riscv32-linux-strip accel_pitch_roll 
+
+7) I have placed the mpu6050 on a breadboard with the pins interfaced according to this iic addresss to the soc's ip directly 
+
+0x1011_6000 -> master bus slave address
+
+8) For reference here's how previously I ran the following code for the camera : 
