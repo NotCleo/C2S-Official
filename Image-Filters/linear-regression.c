@@ -1,3 +1,13 @@
+/*
+	Ideas that i came across while writing this :
+		How to find inverse of a matrix using gauss jordan elimination
+		How to find inverse of a matrix using LU decompositon and extending gauss jordan idea
+		How to multiply (mxn) * (nxp) instead of the usual (nxn) * (nxn) that I am used to!!
+		How to label matrix multiply loops better!!
+		How to solve for Linear regression's closed form
+		Possibly use this code on the Arty7 board via HLS
+*/
+
 #include<stdio.h>
 #include<stdlib.h>
 #include<math.h>
