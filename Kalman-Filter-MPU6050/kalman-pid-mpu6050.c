@@ -10,9 +10,6 @@
 #include <sys/time.h>
 #include <signal.h>
 
-// ==========================================
-// 1. HARDWARE MAPPING
-// ==========================================
 #define I2C_PHYS_BASE   0x10116000UL
 #define MAP_SIZE        4096UL
 #define MAP_MASK        (MAP_SIZE - 1)
@@ -38,16 +35,12 @@ void handle_sigint(int sig) {
     keep_running = 0;
 }
 
-// Helper for bulletproof timing
 long long get_time_us() {
     struct timeval te; 
     gettimeofday(&te, NULL);
     return te.tv_sec * 1000000LL + te.tv_usec;
 }
 
-// ==========================================
-// 2. MATH: KALMAN FILTER & PID
-// ==========================================
 typedef struct {
     double Q_angle;
     double Q_bias;
@@ -109,7 +102,7 @@ void pid_init(PID *pid, double p, double i, double d) {
 }
 
 double pid_compute(PID *pid, double setpoint, double measured, double dt) {
-    if(dt <= 0.0) dt = 0.001; // Protect against div by zero
+    if(dt <= 0.0) dt = 0.001; 
     double error = setpoint - measured;
     pid->integral += error * dt;
     double derivative = (error - pid->prev_error) / dt;
@@ -117,9 +110,6 @@ double pid_compute(PID *pid, double setpoint, double measured, double dt) {
     return (pid->kp * error) + (pid->ki * pid->integral) + (pid->kd * derivative);
 }
 
-// ==========================================
-// 3. I2C & MPU DRIVERS
-// ==========================================
 void *map_physical_memory(uint32_t phys_addr) {
     int mem_fd = open("/dev/mem", O_RDWR | O_SYNC);
     if (mem_fd == -1) { perror("Error opening /dev/mem"); exit(EXIT_FAILURE); }
@@ -133,7 +123,6 @@ void i2c_init() {
     I2C_REG(REG_CR) = 0x01; 
 }
 
-// SAFE WRITE: Config registers need time to settle. Using usleep(5000) prevents the 0,0,0,0 error.
 void i2c_write_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t val) {
     I2C_REG(REG_TX_FIFO) = 0x100 | (dev_addr << 1); 
     I2C_REG(REG_TX_FIFO) = reg_addr;                
@@ -141,7 +130,6 @@ void i2c_write_reg(uint8_t dev_addr, uint8_t reg_addr, uint8_t val) {
     usleep(5000); 
 }
 
-// OPTIMIZED FAST READ (As per your request)
 void i2c_read_bytes(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, int length) {
     I2C_REG(REG_TX_FIFO) = 0x100 | (dev_addr << 1);
     I2C_REG(REG_TX_FIFO) = reg_addr;
@@ -150,16 +138,14 @@ void i2c_read_bytes(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, int lengt
 
     for(int i=0; i<length; i++) {
         int timeout = 0;
-        // Wait for RX FIFO to have data (Bit 6 of Status Register)
-        // REMOVED usleep(10) to prevent OS scheduling lag
+
         while ((I2C_REG(REG_SR) & 0x40) && (timeout < 1000000)) {
             timeout++;
-            // Busy wait - just burn CPU cycles briefly
             for(volatile int k=0; k<50; k++); 
         }
 
         if (timeout >= 1000000) {
-            data[i] = 0; // Timeout
+            data[i] = 0; 
         } else {
             data[i] = (uint8_t)(I2C_REG(REG_RX_FIFO) & 0xFF);
         }
@@ -168,27 +154,21 @@ void i2c_read_bytes(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, int lengt
 
 void mpu_init() {
     i2c_write_reg(MPU6050_ADDR, PWR_MGMT_1, 0x00);
-    i2c_write_reg(MPU6050_ADDR, ACCEL_CONFIG, 0x00); // 2g
-    i2c_write_reg(MPU6050_ADDR, GYRO_CONFIG, 0x00);  // 250 dps
+    i2c_write_reg(MPU6050_ADDR, ACCEL_CONFIG, 0x00); 
+    i2c_write_reg(MPU6050_ADDR, GYRO_CONFIG, 0x00);  
 }
-
-// ==========================================
-// 4. MAIN LOOP
-// ==========================================
 int main() {
     signal(SIGINT, handle_sigint);
     i2c_base_virt = (volatile uint32_t *)map_physical_memory(I2C_PHYS_BASE);
     i2c_init();
 
-    printf("1) starting mpu init\n");
+    printf("1) mpu init\n");
     mpu_init();
 
-    // Setup Kalman Filters
     Kalman kalman_pitch, kalman_roll;
     kalman_init(&kalman_pitch);
     kalman_init(&kalman_roll);
 
-    // --- PHASE 1: RECORDING ---
     printf("2) recording for 15 seconds by writing to csv\n");
     FILE *fp = fopen("mpu_raw_data.csv", "w");
     if(fp) fprintf(fp, "time_s,ax,ay,az,gx,gy,gz,raw_pitch,kalman_pitch\n");
@@ -200,7 +180,6 @@ int main() {
     uint8_t buf[14];
     int samples = 0;
 
-    // 15 Second Recording & Training Loop
     while(keep_running) {
         long long now_us = get_time_us();
         double elapsed = (now_us - start_us) / 1000000.0;
@@ -217,15 +196,12 @@ int main() {
         gy = (int16_t)((buf[10] << 8) | buf[11]);
         gz = (int16_t)((buf[12] << 8) | buf[13]);
 
-        // Raw Angles
         double pitch = -(atan2((double)ax, sqrt((double)ay*ay + (double)az*az)) * 180.0) / M_PI;
         double roll  = (atan2((double)ay, (double)az) * 180.0) / M_PI;
 
-        // Gyro rates (250 dps range -> divide by 131.0)
         double gyro_pitch_rate = gy / 131.0; 
         double gyro_roll_rate  = gx / 131.0;
 
-        // Train the Kalman filter while recording
         double filtered_pitch = kalman_update(&kalman_pitch, pitch, gyro_pitch_rate, dt);
         double filtered_roll  = kalman_update(&kalman_roll, roll, gyro_roll_rate, dt);
 
@@ -234,11 +210,9 @@ int main() {
     }
     if(fp) fclose(fp);
 
-    // --- PHASE 2: PID INITIALIZATION ---
     printf("3) recording done running kalman\n");
     
     PID pid_pitch, pid_roll;
-    // Set PID Tuning parameters (using your values from pid-mpu.c)
     pid_init(&pid_pitch, 1.50, 0.02, 0.50); 
     pid_init(&pid_roll, 1.50, 0.02, 0.50);
 
@@ -247,7 +221,6 @@ int main() {
 
     prev_us = get_time_us();
 
-    // --- PHASE 3: LIVE STABILIZATION LOOP ---
     while(keep_running) {
         long long now_us = get_time_us();
         double dt = (now_us - prev_us) / 1000000.0;
@@ -260,22 +233,18 @@ int main() {
         gx = (int16_t)((buf[8] << 8) | buf[9]);
         gy = (int16_t)((buf[10] << 8) | buf[11]);
 
-        // Raw Angles
         double raw_pitch = -(atan2((double)ax, sqrt((double)ay*ay + (double)az*az)) * 180.0) / M_PI;
         double raw_roll  = (atan2((double)ay, (double)az) * 180.0) / M_PI;
 
         double gyro_pitch_rate = gy / 131.0; 
         double gyro_roll_rate  = gx / 131.0;
 
-        // Apply Kalman Filter (Live)
         double filtered_pitch = kalman_update(&kalman_pitch, raw_pitch, gyro_pitch_rate, dt);
         double filtered_roll  = kalman_update(&kalman_roll, raw_roll, gyro_roll_rate, dt);
 
-        // Apply PID (Target is 0.0 degrees)
         double pitch_correction = pid_compute(&pid_pitch, 0.0, filtered_pitch, dt);
         double roll_correction  = pid_compute(&pid_roll, 0.0, filtered_roll, dt);
 
-        // Generate Instructions based on PID Correction Output
         char pitch_cmd[30];
         if (pitch_correction > 15.0) strcpy(pitch_cmd, "TILT NOSE DOWN");
         else if (pitch_correction < -15.0) strcpy(pitch_cmd, "TILT NOSE UP  ");
@@ -286,15 +255,10 @@ int main() {
         else if (roll_correction < -15.0) strcpy(roll_cmd, "ROLL RIGHT");
         else strcpy(roll_cmd, "ROLL LEVEL");
 
-        // 5) Print live data
         printf("\033[2K\r5) %s | %s | (P: %5.1f, R: %5.1f)", 
                pitch_cmd, roll_cmd, filtered_pitch, filtered_roll);
         fflush(stdout);
 
-        // Terminal refresh rate (20 Hz)
         usleep(50000); 
     }
-
-    printf("\nExiting cleanly...\n");
-    return 0;
 }
