@@ -1,0 +1,26 @@
+Look at your polling loops: while (!(DMA->MM2S_SR & 0x02)); and while (NPU[14] != 0);.
+
+
+In Baremetal: The CPU rapidly and continuously hammers the physical address over the AXI bus. The precise microsecond the hardware flips that bit, the CPU moves to the next instruction. It takes 0.2ms total.
+
+In Linux: You are running in "user space." If your while-loop spins for more than a brief moment, the Linux kernel scheduler might decide your program is hogging the CPU and abruptly pause it (preemption) to let background OS tasks run. By the time the scheduler gives control back to your C program, several milliseconds might have passed. You are no longer measuring the hardware's compute time; you are measuring Linux's scheduling latency.
+
+
+n baremetal, polling is fine because you own the CPU. In Linux, the correct way to wait for hardware is to go to sleep and let the hardware wake you up.
+
+Instead of using /dev/mem, you configure your Linux device tree to use the Userspace I/O (UIO) framework. UIO maps your NPU and DMA registers to user space just like /dev/mem, but it also maps the hardware interrupt line to a file descriptor (usually /dev/uio0).
+
+
+Instead of your while (NPU[14] != 0); loop, you do a blocking read() on the UIO device:
+
+
+uint32_t irq_count;
+
+// This puts your thread to sleep. CPU usage drops to 0%.
+
+// The Linux scheduler is happy because you aren't hogging resources.
+
+read(uio_fd, &irq_count, sizeof(irq_count)); 
+
+
+// --- The thread instantly wakes up here ONLY when the NPU fires its interrupt ---
