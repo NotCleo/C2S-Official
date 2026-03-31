@@ -1,0 +1,56 @@
+amrut@Maverick:/opt$ ls
+containerd  forticlient  microchip       ros        Vivado
+Downloads   google       Model_Composer  Vitis_HLS  warpdotdev
+amrut@Maverick:/opt$ cd Vivado/
+amrut@Maverick:/opt/Vivado$ ls
+2023.2
+amrut@Maverick:/opt/Vivado$ cd 2023.2/
+amrut@Maverick:/opt/Vivado/2023.2$ ls
+bin       fonts     lib                  product_rel_win.log  settings64.sh
+data      gnu       lnx64                reportstrategies     strategies
+doc       ids_lite  platforms            scripts              tps
+examples  include   product_rel_lin.log  settings64.csh
+amrut@Maverick:/opt/Vivado/2023.2$ cd data/
+amrut@Maverick:/opt/Vivado/2023.2/data$ ls
+aie2                     ips            sigasi
+aie_ml                   layouts        simmodels
+aiesynth                 libmetal       Spd_Test_Inputs
+autoPredict              licenses_op    spi
+boards                   memory         synthNlOptML
+bootgen                  monaco         sysgen
+bootpmcsettings          mpfPrediction  systemc
+congestionPrediction     msg            system-device-tree-xlnx
+cxl                      mtbf           system_verilog
+dashboard                open-amp       templatized_flows
+data_component_manifest  osci           tps
+dbgflows                 osci_systemc   verilog
+deca                     parts          versal
+documentation.dat        powercfg       version.dat
+embeddedsw               precomp        version_pdm.dat
+emulation                precomp_hsv    version_sam.dat
+estdly                   PS             vhdl
+feasibility              pubkey         vlm
+fit                      qng            web
+gated                    resource_est   webtalk
+gemm                     rsb            xhub
+hierdb                   rules          xicom
+incr_compile             secureip       XilinxTclStore
+ip                       sedata.acd     xilinx_vip
+ipmetadata               shareddata     xsim
+amrut@Maverick:/opt/Vivado/2023.2/data$ cd boards/
+amrut@Maverick:/opt/Vivado/2023.2/data/boards$ ls
+board_interface_preferences.xml  board_schemas
+amrut@Maverick:/opt/Vivado/2023.2/data/boards$ sudo mkdir -p /opt/Vivado/2023.2/data/boards/board_files
+[sudo] password for amrut: 
+amrut@Maverick:/opt/Vivado/2023.2/data/boards$ ls
+board_files  board_interface_preferences.xml  board_schemas
+amrut@Maverick:/opt/Vivado/2023.2/data/boards$ sudo cp -r ~/Downloads/vivado-boards-master/new/board_files/* /opt/Vivado/2023.2/data/boards/board_files/
+amrut@Maverick:/opt/Vivado/2023.2/data/boards$ ls
+board_files  board_interface_preferences.xml  board_schemas
+amrut@Maverick:/opt/Vivado/2023.2/data/boards$ cd board_files/
+amrut@Maverick:/opt/Vivado/2023.2/data/boards/board_files$ ls
+arty         arty-a7-35  arty-s7-50  arty-z7-20  cmod_a7-15t  cmod-s7-25   cora-z7-10  genesys2        genesys-zu-5ev  nexys4_ddr     nexys-a7-50t  sword      zedboard  zybo-z7-10
+arty-a7-100  arty-s7-25  arty-z7-10  basys3      cmod_a7-35t  cora-z7-07s  eclypse-z7  genesys-zu-3eg  nexys4          nexys-a7-100t  nexys_video   usb104-a7  zybo      zybo-z7-20
+amrut@Maverick:/opt/Vivado/2023.2/data/boards/board_files$ sudo chmod -R 755 /opt/Vivado/2023.2/data/boards/board_files/
+amrut@Maverick:/opt/Vivado/2023.2/data/boards/board_files$ 
+
