@@ -1,0 +1,17 @@
+the model files sit in /home/amrut/output : 
+
+  weights.bin
+  biases.bin
+  input_test.bin 
+
+the image binary sits in : 
+
+  /home/amrut/VEGA/vega-tools/utils/eth_transfer/accelerator/input_test.bin
+
+the address segment mapping sits in : 
+
+  /home/amrut/Downloads/c2s_archwaymar12/c2s_new/Vivado_2023_AT1051_Project/AT1051_SoC/AT1051_SoC.runs/impl_1
+
+  
+
+
