@@ -1,0 +1,250 @@
+====================================================
+   ARTIX-7 NPU - YOLOv8 HYBRID TILING ENGINE
+====================================================
+
+[TRACE] Hard resetting Transmit DMA...
+[TRACE] Loading FULL 320x240 Image into ARM RAM...
+[TRACE] Executing Hardware Partitioning (5x4 Grid)...
+
+[*] Processing Tile [0, 0]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [1, 0]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [2, 0]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [3, 0]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [4, 0]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [0, 1]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [1, 1]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [2, 1]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [3, 1]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [4, 1]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [0, 2]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [1, 2]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [2, 2]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [3, 2]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [4, 2]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [0, 3]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [1, 3]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [2, 3]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [3, 3]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[*] Processing Tile [4, 3]
+--------------------------------------------------
+  -> Layer  0: 64x64x3  =>  32x32x16
+  -> Layer  8: 8x8x128  =>  8x8x64
+  -> Layer 16: 4x4x64  =>  4x4x64
+  -> Layer 24: 2x2x128  =>  2x2x128
+  -> Layer 32: 2x2x96  =>  2x2x64
+  -> Layer 40: 1x1x128  =>  1x1x128
+  -> Layer 48: 1x1x128  =>  1x1x64
+  -> Layer 56: 1x1x64  =>  1x1x3
+  -> Layer 63: 1x1x16  =>  1x1x1
+
+[TRACE] Tiling Complete. Decoding YOLOv8 Confidence Scores...
+[SUCCESS] Found 2 targets! Coordinates saved to 'coordinates.csv'.
